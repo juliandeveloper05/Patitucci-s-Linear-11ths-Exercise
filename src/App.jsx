@@ -10,6 +10,8 @@ import {
   Zap,
   Target,
   ChevronRight,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import Footer from "./components/Footer";
 
@@ -20,6 +22,10 @@ const BassTrainer = () => {
   const [currentNoteIndex, setCurrentNoteIndex] = useState(-1);
   const [isLooping, setIsLooping] = useState(true);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  
+  // Metronome states
+  const [currentBeat, setCurrentBeat] = useState(-1);
+  const [isMetronomeEnabled, setIsMetronomeEnabled] = useState(false);
 
   // Referencias para el motor de audio (evitan stale closures)
   const audioContextRef = useRef(null);
@@ -33,6 +39,7 @@ const BassTrainer = () => {
   const tempoRef = useRef(tempo);
   const isLoopingRef = useRef(isLooping);
   const isPlayingRef = useRef(isPlaying);
+  const isMetronomeEnabledRef = useRef(isMetronomeEnabled);
 
   // Sincronizar refs con estado
   useEffect(() => {
@@ -44,6 +51,9 @@ const BassTrainer = () => {
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+  useEffect(() => {
+    isMetronomeEnabledRef.current = isMetronomeEnabled;
+  }, [isMetronomeEnabled]);
 
   // Frecuencias base
   const STRING_FREQUENCIES = {
@@ -93,6 +103,30 @@ const BassTrainer = () => {
     };
   }, []);
 
+  // Metronome click sound
+  const playMetronomeClick = (time, isDownbeat) => {
+    const ctx = audioContextRef.current;
+    if (!ctx || !isMetronomeEnabledRef.current) return;
+
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    // Higher pitch for downbeat (beat 1)
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(isDownbeat ? 1000 : 800, time);
+
+    // Short, sharp envelope
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(isDownbeat ? 0.4 : 0.25, time + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.1);
+  };
+
   const playSound = (string, fret, time) => {
     const ctx = audioContextRef.current;
     if (!ctx) return;
@@ -127,17 +161,30 @@ const BassTrainer = () => {
   };
 
   const scheduleNote = (index, time) => {
-    // 1. Programar audio
+    // 1. Programar audio de nota
     const note = notesRef.current[index];
     playSound(note.string, note.fret, time);
 
-    // 2. Programar actualización visual
+    // 2. Calcular beat actual (3 notas por beat, 4 beats por compás)
+    const beat = Math.floor(index / 3) % 4;
+    const isFirstNoteOfBeat = index % 3 === 0;
+    const isDownbeat = beat === 0;
+
+    // 3. Programar click de metrónomo en primera nota de cada beat
+    if (isFirstNoteOfBeat) {
+      playMetronomeClick(time, isDownbeat);
+    }
+
+    // 4. Programar actualización visual
     const ctx = audioContextRef.current;
     const delay = Math.max(0, (time - ctx.currentTime) * 1000);
 
     setTimeout(() => {
       if (isPlayingRef.current) {
         setCurrentNoteIndex(index);
+        if (isFirstNoteOfBeat) {
+          setCurrentBeat(beat);
+        }
       }
     }, delay);
   };
@@ -204,6 +251,7 @@ const BassTrainer = () => {
   const handleStop = () => {
     setIsPlaying(false);
     setCurrentNoteIndex(-1);
+    setCurrentBeat(-1);
     if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
   };
 
@@ -540,8 +588,39 @@ const BassTrainer = () => {
           style={{animationDelay: "0.3s"}}
         >
           <div className="flex flex-col gap-4 sm:gap-6">
+            
+            {/* Beat Indicator */}
+            <div className="flex justify-center items-center gap-2 sm:gap-4">
+              <span className="text-[var(--color-primary-light)] text-xs sm:text-sm uppercase tracking-wider font-medium">
+                Beat
+              </span>
+              <div className="flex gap-2 sm:gap-3">
+                {[0, 1, 2, 3].map((beat) => (
+                  <div
+                    key={beat}
+                    className={`
+                      w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center
+                      font-mono font-bold text-sm sm:text-base transition-all duration-150
+                      ${
+                        currentBeat === beat
+                          ? "bg-[var(--color-gold)] text-[var(--color-primary-deep)] scale-110"
+                          : "bg-[var(--color-primary-dark)] text-[var(--color-primary-light)] border border-[var(--color-primary-medium)]"
+                      }
+                    `}
+                    style={{
+                      boxShadow: currentBeat === beat 
+                        ? "0 0 20px var(--color-gold), 0 0 40px rgba(201, 165, 84, 0.3)" 
+                        : "none"
+                    }}
+                  >
+                    {beat + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Playback Controls */}
-            <div className="flex gap-2 sm:gap-4 justify-center">
+            <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
               {!isPlaying ? (
                 <button
                   onClick={handlePlay}
@@ -585,6 +664,28 @@ const BassTrainer = () => {
                 />
                 <span className="hidden xs:inline">{isLooping ? "Loop ON" : "Loop OFF"}</span>
                 <span className="xs:hidden">{isLooping ? "ON" : "OFF"}</span>
+              </button>
+
+              {/* Metronome Toggle */}
+              <button
+                onClick={() => setIsMetronomeEnabled(!isMetronomeEnabled)}
+                className={`
+                  px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-medium flex items-center gap-2 sm:gap-3 
+                  transition-all duration-300 border-2 text-sm sm:text-base
+                  ${
+                    isMetronomeEnabled
+                      ? "bg-[var(--color-info)]/20 border-[var(--color-info)] text-[var(--color-info)]"
+                      : "bg-[var(--color-primary-dark)] border-[var(--color-primary-medium)] text-[var(--color-primary-light)] hover:border-[var(--color-primary-light)]"
+                  }
+                `}
+              >
+                {isMetronomeEnabled ? (
+                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
+                <span className="hidden xs:inline">{isMetronomeEnabled ? "Click ON" : "Click OFF"}</span>
+                <span className="xs:hidden">{isMetronomeEnabled ? "ON" : "OFF"}</span>
               </button>
             </div>
 
