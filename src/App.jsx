@@ -23,9 +23,16 @@ const BassTrainer = () => {
   const [isLooping, setIsLooping] = useState(true);
   const [isAudioReady, setIsAudioReady] = useState(false);
   
+  // Countdown states
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  
   // Metronome states
   const [currentBeat, setCurrentBeat] = useState(-1);
+  const [currentTriplet, setCurrentTriplet] = useState(-1); // 0, 1, 2 dentro del beat
+  const [currentMeasure, setCurrentMeasure] = useState(0); // Compás actual (1-based para UI)
   const [isMetronomeEnabled, setIsMetronomeEnabled] = useState(false);
+  const [isNotesMuted, setIsNotesMuted] = useState(false); // Mutear notas para practicar solo con metrónomo
 
   // Referencias para el motor de audio (evitan stale closures)
   const audioContextRef = useRef(null);
@@ -40,6 +47,7 @@ const BassTrainer = () => {
   const isLoopingRef = useRef(isLooping);
   const isPlayingRef = useRef(isPlaying);
   const isMetronomeEnabledRef = useRef(isMetronomeEnabled);
+  const isNotesMutedRef = useRef(isNotesMuted);
 
   // Sincronizar refs con estado
   useEffect(() => {
@@ -54,6 +62,9 @@ const BassTrainer = () => {
   useEffect(() => {
     isMetronomeEnabledRef.current = isMetronomeEnabled;
   }, [isMetronomeEnabled]);
+  useEffect(() => {
+    isNotesMutedRef.current = isNotesMuted;
+  }, [isNotesMuted]);
 
   // Frecuencias base
   const STRING_FREQUENCIES = {
@@ -103,33 +114,38 @@ const BassTrainer = () => {
     };
   }, []);
 
-  // Metronome click sound
-  const playMetronomeClick = (time, isDownbeat) => {
+  // Metronome click sound - now plays on every triplet
+  const playMetronomeClick = (time, isDownbeat, isFirstOfBeat) => {
     const ctx = audioContextRef.current;
     if (!ctx || !isMetronomeEnabledRef.current) return;
 
     const osc = ctx.createOscillator();
     const gainNode = ctx.createGain();
 
-    // Higher pitch for downbeat (beat 1)
+    // Different pitches: downbeat > beat > triplet subdivisions
     osc.type = "sine";
-    osc.frequency.setValueAtTime(isDownbeat ? 1000 : 800, time);
+    const frequency = isDownbeat && isFirstOfBeat ? 1000 : isFirstOfBeat ? 800 : 600;
+    osc.frequency.setValueAtTime(frequency, time);
 
-    // Short, sharp envelope
+    // Softer volume for triplet subdivisions
+    const volume = isDownbeat && isFirstOfBeat ? 0.4 : isFirstOfBeat ? 0.25 : 0.15;
     gainNode.gain.setValueAtTime(0, time);
-    gainNode.gain.linearRampToValueAtTime(isDownbeat ? 0.4 : 0.25, time + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+    gainNode.gain.linearRampToValueAtTime(volume, time + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
 
     osc.connect(gainNode);
     gainNode.connect(ctx.destination);
 
     osc.start(time);
-    osc.stop(time + 0.1);
+    osc.stop(time + 0.08);
   };
 
   const playSound = (string, fret, time) => {
     const ctx = audioContextRef.current;
     if (!ctx) return;
+    
+    // Skip if notes are muted
+    if (isNotesMutedRef.current) return;
 
     // Frecuencia
     const baseFreq = STRING_FREQUENCIES[string];
@@ -170,18 +186,24 @@ const BassTrainer = () => {
     const isFirstNoteOfBeat = index % 3 === 0;
     const isDownbeat = beat === 0;
 
-    // 3. Programar click de metrónomo en primera nota de cada beat
-    if (isFirstNoteOfBeat) {
-      playMetronomeClick(time, isDownbeat);
-    }
+    // 3. Programar click de metrónomo en cada tresillo
+    playMetronomeClick(time, isDownbeat, isFirstNoteOfBeat);
 
     // 4. Programar actualización visual
     const ctx = audioContextRef.current;
     const delay = Math.max(0, (time - ctx.currentTime) * 1000);
 
+    // 5. Calcular triplet dentro del beat (0, 1, 2)
+    const tripletInBeat = index % 3;
+    
+    // 6. Calcular compás actual (12 notas por compás = 4 beats × 3 tresillos)
+    const measure = Math.floor(index / 12) + 1;
+
     setTimeout(() => {
       if (isPlayingRef.current) {
         setCurrentNoteIndex(index);
+        setCurrentTriplet(tripletInBeat);
+        setCurrentMeasure(measure);
         if (isFirstNoteOfBeat) {
           setCurrentBeat(beat);
         }
@@ -229,6 +251,29 @@ const BassTrainer = () => {
     schedulerRef.current = scheduler;
   }, [scheduler]);
 
+  // Countdown beep sound
+  const playCountdownBeep = (isStart = false) => {
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    osc.type = "sine";
+    // Higher pitch for "GO!" beep
+    osc.frequency.setValueAtTime(isStart ? 880 : 440, ctx.currentTime);
+
+    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  };
+
   const handlePlay = async () => {
     const ctx = audioContextRef.current;
 
@@ -237,21 +282,46 @@ const BassTrainer = () => {
     }
     setIsAudioReady(true);
 
-    if (isPlaying) return;
+    if (isPlaying || isCountingDown) return;
 
-    setIsPlaying(true);
-    setCurrentNoteIndex(-1);
-    playIndexRef.current = 0;
+    // Start countdown
+    setIsCountingDown(true);
+    setCountdown(3);
+    playCountdownBeep();
 
-    nextNoteTimeRef.current = ctx.currentTime + 0.1;
+    // Countdown sequence: 3 -> 2 -> 1 -> GO!
+    setTimeout(() => {
+      setCountdown(2);
+      playCountdownBeep();
+    }, 1000);
 
-    scheduler();
+    setTimeout(() => {
+      setCountdown(1);
+      playCountdownBeep();
+    }, 2000);
+
+    setTimeout(() => {
+      setIsCountingDown(false);
+      setCountdown(0);
+      playCountdownBeep(true); // Higher pitch for start
+      
+      // Start playback
+      setIsPlaying(true);
+      setCurrentNoteIndex(-1);
+      playIndexRef.current = 0;
+      nextNoteTimeRef.current = ctx.currentTime + 0.1;
+      scheduler();
+    }, 3000);
   };
 
   const handleStop = () => {
     setIsPlaying(false);
+    setIsCountingDown(false);
+    setCountdown(0);
     setCurrentNoteIndex(-1);
     setCurrentBeat(-1);
+    setCurrentTriplet(-1);
+    setCurrentMeasure(0);
     if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
   };
 
@@ -353,21 +423,40 @@ const BassTrainer = () => {
             <div 
               className={`
                 glass px-3 sm:px-5 py-1.5 sm:py-2 rounded-full flex items-center gap-2 sm:gap-3
-                ${isPlaying ? "border-[var(--color-success)]" : "border-[var(--color-primary-medium)]"}
+                ${isCountingDown ? "border-[var(--color-warning)]" : isPlaying ? "border-[var(--color-success)]" : "border-[var(--color-primary-medium)]"}
               `}
             >
               <span
                 className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
-                  isPlaying ? "bg-[var(--color-success)] animate-pulse" : "bg-[var(--color-error)]"
+                  isCountingDown ? "bg-[var(--color-warning)] animate-pulse" : isPlaying ? "bg-[var(--color-success)] animate-pulse" : "bg-[var(--color-error)]"
                 }`}
               />
               <span className="text-xs sm:text-sm uppercase tracking-wider font-medium text-[var(--color-cream)]">
-                {isPlaying ? "Playing" : "Ready"}
+                {isCountingDown ? "Get Ready" : isPlaying ? "Playing" : "Ready"}
               </span>
-              <Music className={`w-3 h-3 sm:w-4 sm:h-4 ${isPlaying ? "text-[var(--color-success)]" : "text-[var(--color-primary-light)]"}`} />
+              <Music className={`w-3 h-3 sm:w-4 sm:h-4 ${isCountingDown ? "text-[var(--color-warning)]" : isPlaying ? "text-[var(--color-success)]" : "text-[var(--color-primary-light)]"}`} />
             </div>
           </div>
         </header>
+
+        {/* Countdown Overlay */}
+        {isCountingDown && (
+          <div className="fixed inset-0 bg-[var(--color-primary-deep)]/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeInUp">
+            <div className="text-center">
+              <p className="text-[var(--color-gold)] text-lg sm:text-2xl uppercase tracking-widest mb-4 font-medium">
+                Prepárate
+              </p>
+              <div 
+                className="text-8xl sm:text-9xl font-bold text-[var(--color-gold)] animate-pulse"
+                style={{
+                  textShadow: "0 0 40px var(--color-gold), 0 0 80px var(--color-gold)"
+                }}
+              >
+                {countdown}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Educational Info Panel - Hidden on very small screens */}
         <div className="hidden sm:block glass-strong rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 animate-fadeInUp" style={{animationDelay: "0.1s"}}>
@@ -589,33 +678,73 @@ const BassTrainer = () => {
         >
           <div className="flex flex-col gap-4 sm:gap-6">
             
-            {/* Beat Indicator */}
-            <div className="flex justify-center items-center gap-2 sm:gap-4">
+            {/* Beat Indicator with Triplet Subdivision */}
+            <div className="flex flex-col items-center gap-2 sm:gap-3">
               <span className="text-[var(--color-primary-light)] text-xs sm:text-sm uppercase tracking-wider font-medium">
                 Beat
               </span>
-              <div className="flex gap-2 sm:gap-3">
+              <div className="flex gap-3 sm:gap-4">
                 {[0, 1, 2, 3].map((beat) => (
-                  <div
-                    key={beat}
-                    className={`
-                      w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center
-                      font-mono font-bold text-sm sm:text-base transition-all duration-150
-                      ${
-                        currentBeat === beat
-                          ? "bg-[var(--color-gold)] text-[var(--color-primary-deep)] scale-110"
-                          : "bg-[var(--color-primary-dark)] text-[var(--color-primary-light)] border border-[var(--color-primary-medium)]"
-                      }
-                    `}
-                    style={{
-                      boxShadow: currentBeat === beat 
-                        ? "0 0 20px var(--color-gold), 0 0 40px rgba(201, 165, 84, 0.3)" 
-                        : "none"
-                    }}
-                  >
-                    {beat + 1}
+                  <div key={beat} className="flex flex-col items-center gap-1 sm:gap-2">
+                    {/* Beat Number Circle */}
+                    <div
+                      className={`
+                        w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center
+                        font-mono font-bold text-base sm:text-lg transition-all duration-150
+                        ${
+                          currentBeat === beat
+                            ? "bg-[var(--color-gold)] text-[var(--color-primary-deep)] scale-110"
+                            : "bg-[var(--color-primary-dark)] text-[var(--color-primary-light)] border border-[var(--color-primary-medium)]"
+                        }
+                      `}
+                      style={{
+                        boxShadow: currentBeat === beat 
+                          ? "0 0 20px var(--color-gold), 0 0 40px rgba(201, 165, 84, 0.3)" 
+                          : "none"
+                      }}
+                    >
+                      {beat + 1}
+                    </div>
+                    
+                    {/* Triplet Subdivision Dots */}
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map((triplet) => (
+                        <div
+                          key={triplet}
+                          className={`
+                            w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-100
+                            ${
+                              currentBeat === beat && currentTriplet === triplet
+                                ? "bg-[var(--color-active)] scale-125"
+                                : currentBeat === beat
+                                  ? "bg-[var(--color-gold)]/40"
+                                  : "bg-[var(--color-primary-medium)]/50"
+                            }
+                          `}
+                          style={{
+                            boxShadow: currentBeat === beat && currentTriplet === triplet
+                              ? "0 0 8px var(--color-active-glow)"
+                              : "none"
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ))}
+              </div>
+              
+              {/* Triplet Count Label */}
+              <div className="font-mono text-xs text-[var(--color-primary-light)]">
+                {currentTriplet >= 0 && currentBeat >= 0 ? (
+                  <span>
+                    <span className="text-[var(--color-gold)]">{currentBeat + 1}</span>
+                    <span className="text-[var(--color-active)]">
+                      {currentTriplet === 0 ? "" : currentTriplet === 1 ? " & " : " a "}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="opacity-50">triplets</span>
+                )}
               </div>
             </div>
 
@@ -664,6 +793,24 @@ const BassTrainer = () => {
                 />
                 <span className="hidden xs:inline">{isLooping ? "Loop ON" : "Loop OFF"}</span>
                 <span className="xs:hidden">{isLooping ? "ON" : "OFF"}</span>
+              </button>
+
+              {/* Mute Notes Toggle */}
+              <button
+                onClick={() => setIsNotesMuted(!isNotesMuted)}
+                className={`
+                  px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-medium flex items-center gap-2 sm:gap-3 
+                  transition-all duration-300 border-2 text-sm sm:text-base
+                  ${
+                    isNotesMuted
+                      ? "bg-[var(--color-warning)]/20 border-[var(--color-warning)] text-[var(--color-warning)]"
+                      : "bg-[var(--color-primary-dark)] border-[var(--color-primary-medium)] text-[var(--color-primary-light)] hover:border-[var(--color-primary-light)]"
+                  }
+                `}
+              >
+                <Music className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden xs:inline">{isNotesMuted ? "Notas OFF" : "Notas ON"}</span>
+                <span className="xs:hidden">{isNotesMuted ? "OFF" : "ON"}</span>
               </button>
 
               {/* Metronome Toggle */}
