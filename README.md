@@ -1,4 +1,4 @@
-# 🎸 John Patitucci Jazz Bass Academy
+# 🎸 Bass Academy
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 ![Vite](https://img.shields.io/badge/Vite-7.2-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-4.1-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-**Interactive bass practice tool for mastering linear arpeggios**
+**Interactive Bass Training Platform**
 
 [Demo](#-demo) • [Features](#-features) • [Installation](#-installation) • [Roadmap](#-roadmap)
 
@@ -16,36 +16,56 @@
 
 ## 📖 About
 
-A specialized practice tool for bassists looking to master **linear arpeggios**, a technique popularized by jazz fusion legend **John Patitucci**. 
+A comprehensive bass practice platform featuring a **selectable exercise library** with techniques from legendary artists like **John Patitucci**.
 
-Unlike traditional "box shape" playing, this exercise focuses on extending arpeggios horizontally and vertically across the fretboard using **11th chord voicings** (Emaj11 → Fm11).
+Practice arpeggios, scales, and patterns with real-time tablature, fretboard visualization, and Web Audio synthesis - all transposable to any key.
 
 ## ✨ Features
 
 | Feature | Description |
 |---------|-------------|
+| 📚 **Exercise Library** | 8+ arpeggio patterns: Maj7, m7, dom7, dim7, Linear 11ths, and more |
+| 🎹 **Root Transposition** | Practice any pattern in all 12 chromatic keys |
 | 🎯 **Interactive Tablature** | Real-time visual feedback highlighting notes as they play |
-| 🔊 **Web Audio Engine** | Custom synthesizer built with Web Audio API (no external samples) |
-| ⏱️ **Tempo Control** | Adjustable BPM from 40-160 for practice at any speed |
+| 🎸 **Fretboard View** | Alternative visualization showing the bass neck |
+| 🔊 **Web Audio Engine** | Custom synthesizer built with Web Audio API |
+| 🥁 **Metronome** | Beat indicator with triplet subdivisions |
+| ⏱️ **Tempo Control** | Adjustable BPM from 40-160 |
 | 🔄 **Loop Mode** | Continuous practice without interruption |
-| 📱 **Responsive Design** | Optimized layouts for desktop and mobile |
-| 🎨 **Premium UI** | Modern glassmorphism design with smooth animations |
+| 🌓 **Dark/Light Theme** | Toggle between themes with persistence |
+| 📱 **Responsive Design** | Optimized for desktop and mobile |
 
-## 🎵 Music Theory
+## 📚 Exercise Library
 
-- **Chords:** Emaj11 → Fm11 (chromatic movement)
-- **Rhythm:** Triplet phrasing (3 notes per beat)
-- **Technique:** Linear arpeggio across all 4 strings
-- **Extensions:** Focus on 9ths and 11ths
+### Artist Techniques
+| Pattern | Category | Difficulty |
+|---------|----------|------------|
+| Linear 11ths (Major) | John Patitucci | ★★★★☆ |
+| Linear 11ths (Minor) | John Patitucci | ★★★★☆ |
+
+### Basic 7th Arpeggios
+| Pattern | Intervals | Difficulty |
+|---------|-----------|------------|
+| Major 7th | 1, 3, 5, 7 | ★★☆☆☆ |
+| Minor 7th | 1, b3, 5, b7 | ★★☆☆☆ |
+| Dominant 7th | 1, 3, 5, b7 | ★★☆☆☆ |
+| Half Diminished | 1, b3, b5, b7 | ★★★☆☆ |
+| Diminished 7th | 1, b3, b5, bb7 | ★★★☆☆ |
+
+### Advanced 7th Arpeggios
+| Pattern | Intervals | Difficulty |
+|---------|-----------|------------|
+| Minor Major 7th | 1, b3, 5, 7 | ★★★★☆ |
+| Augmented 7th | 1, 3, #5, 7 | ★★★★☆ |
 
 ## 🚀 Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/bass-trainer.git
+git clone https://github.com/juliandeveloper05/Bass-Academy-Interactive-Bass-Training.git
 
 # Navigate to project
-cd bass-trainer
+cd Bass-Academy-Interactive-Bass-Training
 
 # Install dependencies
 npm install
@@ -67,39 +87,37 @@ The app will be available at `http://localhost:5173`
 ## 📁 Project Structure
 
 ```
-bass-trainer/
+bass-academy/
 ├── src/
 │   ├── components/
+│   │   ├── ExerciseSelector.jsx  # Pattern & root selection
+│   │   ├── FretboardView.jsx     # Fretboard visualization
 │   │   └── Footer.jsx
-│   ├── assets/
-│   ├── App.jsx          # Main component
-│   ├── App.css
-│   ├── index.css        # Design system
+│   ├── data/
+│   │   └── exerciseLibrary.js    # Patterns & generation
+│   ├── App.jsx                   # Main component
+│   ├── index.css                 # Design system
 │   └── main.jsx
-├── public/
 ├── index.html
-├── vite.config.js
 └── package.json
 ```
 
 ## 🗺️ Roadmap
 
-### Phase 1: Foundation
-- [ ] Refactor into smaller components
-- [ ] Create `useBassAudio` custom hook
-- [ ] Extract tab data to separate file
+### ✅ Completed
+- [x] Exercise library with selectable patterns
+- [x] Root note transposition (12 keys)
+- [x] Metronome with triplet subdivisions
+- [x] Fretboard visualization mode
+- [x] Light/Dark theme toggle
+- [x] Countdown timer before playback
 
-### Phase 2: Features
-- [ ] Exercise library (Maj7, m7, dom7, etc.)
-- [ ] Metronome with visual beat indicator
-- [ ] Save preferences to LocalStorage
-- [ ] Fretboard visualization mode
-
-### Phase 3: Polish
-- [ ] Light/Dark theme toggle
+### 🔜 Upcoming
+- [ ] More artist techniques (Victor Wooten, Marcus Miller)
+- [ ] Scale patterns (Major, Minor, Modes)
 - [ ] PWA support for offline use
-- [ ] Accessibility improvements (ARIA, keyboard nav)
-- [ ] Real bass samples (Web Audio)
+- [ ] Real bass samples
+- [ ] Practice session statistics
 
 ## 🎓 Resources
 
@@ -116,5 +134,7 @@ MIT © 2025
 <div align="center">
 
 **Made with ❤️ for bass players**
+
+**Bass Academy · 2026**
 
 </div>
