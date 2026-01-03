@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Bass Academy</title>
+  <meta name="theme-color" content="#C9A554">
+  <link rel="icon" type="image/svg+xml" href="/vite.svg">
+  <style>
+    :root {
+      --color-primary-deep: #0D1B2A;
+      --color-primary-dark: #1B263B;
+      --color-primary-medium: #415A77;
+      --color-primary-light: #778DA9;
+      --color-gold: #C9A554;
+      --color-gold-light: #E0C285;
+      --color-cream: #F8F5F0;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--color-primary-deep) 0%, var(--color-primary-dark) 50%, #0a1628 100%);
+      color: var(--color-cream);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 500px;
+      text-align: center;
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(2deg); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .icon-container {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 2rem;
+      background: rgba(201, 165, 84, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(201, 165, 84, 0.2);
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .bass-icon {
+      font-size: 4rem;
+    }
+    
+    .wifi-off {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      background: var(--color-primary-deep);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .wifi-off svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--color-gold);
+      animation: pulse 2s infinite;
+    }
+    
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2rem;
+      color: var(--color-gold);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    .subtitle {
+      font-size: 1.125rem;
+      color: var(--color-primary-light);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .tips-title {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-gold);
+      margin-bottom: 1rem;
+    }
+    
+    .tips-list {
+      list-style: none;
+      text-align: left;
+    }
+    
+    .tips-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--color-primary-light);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .tips-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .tips-list li::before {
+      content: '✓';
+      color: var(--color-gold);
+      font-weight: bold;
+    }
+    
+    .retry-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+      color: var(--color-primary-deep);
+      font-weight: 600;
+      padding: 1rem 2rem;
+      border-radius: 0.75rem;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+    
+    .retry-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(201, 165, 84, 0.3);
+    }
+    
+    .retry-button:active {
+      transform: translateY(0);
+    }
+    
+    .retry-button svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .footer-note {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--color-primary-medium);
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      .icon-container {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .bass-icon {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon-container" style="position: relative;">
+      <span class="bass-icon">🎸</span>
+      <div class="wifi-off">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+          <line x1="2" y1="2" x2="22" y2="22" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    
+    <h1>Sin Conexión</h1>
+    <p class="subtitle">
+      No hay conexión a internet, pero no te preocupes.
+      Bass Academy funciona completamente offline una vez cargada.
+    </p>
+    
+    <div class="glass-card">
+      <h3 class="tips-title">💡 Mientras tanto...</h3>
+      <ul class="tips-list">
+        <li>Verifica tu conexión WiFi o datos móviles</li>
+        <li>Prueba desactivar y activar el modo avión</li>
+        <li>Una vez conectado, la app se cargará automáticamente</li>
+        <li>Tus configuraciones están guardadas localmente</li>
+      </ul>
+    </div>
+    
+    <button class="retry-button" onclick="window.location.reload()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+      Reintentar
+    </button>
+    
+    <p class="footer-note">
+      🎸 Bass Academy © 2026 - Practice anywhere, anytime
+    </p>
+  </div>
+  
+  <script>
+    // Auto-retry when connection is restored
+    window.addEventListener('online', () => {
+      console.log('🌐 Connection restored, reloading...');
+      window.location.reload();
+    });
+    
+    // Periodic connection check
+    setInterval(() => {
+      if (navigator.onLine) {
+        window.location.reload();
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

@@ -1,13 +1,18 @@
 {
   "name": "bass-academy",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Interactive bass training platform with offline PWA support",
+  "author": "Julian Javier Soto",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pwa:generate-icons": "node scripts/generate-icons.js",
+    "pwa:test": "npm run build && npm run preview"
   },
   "dependencies": {
     "lucide-react": "^0.562.0",
@@ -25,7 +30,28 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.18",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
+  },
+  "keywords": [
+    "bass",
+    "music",
+    "education",
+    "pwa",
+    "offline",
+    "training",
+    "arpeggio",
+    "tablature"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juliandeveloper05/Bass-Academy-Interactive-Bass-Training.git"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }

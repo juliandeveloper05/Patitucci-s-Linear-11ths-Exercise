@@ -1,6 +1,6 @@
 /**
  * Bass Trainer - Main Application Component
- * Refactored to use modular hooks, components, and FSM
+ * ✨ WITH PWA SUPPORT ✨
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -23,10 +23,16 @@ import FretboardView from "./components/FretboardView.jsx";
 // Components - Player
 import ControlPanel from "./components/player/ControlPanel.jsx";
 
+// PWA Components
+import PWAInstallBanner from "./components/PWAInstallBanner.jsx";
+import UpdateNotification from "./components/UpdateNotification.jsx";
+import OfflineIndicator from "./components/OfflineIndicator.jsx";
+
 // Hooks
 import { useBassAudio } from "./hooks/useBassAudio.js";
 import { usePlayerState } from "./hooks/usePlayerState.js";
 import { useAudioScheduler } from "./hooks/useAudioScheduler.js";
+import { usePWA } from "./hooks/usePWA.js";
 
 // Config
 import { THEME_CONFIG, COUNTDOWN_CONFIG, VIEW_MODES } from "./config/uiConfig.js";
@@ -39,6 +45,17 @@ import {
 } from "./data/exerciseLibrary.js";
 
 const BassTrainer = () => {
+  // PWA Hook
+  const {
+    isInstallable,
+    isInstalled,
+    isOnline,
+    updateAvailable,
+    install,
+    update,
+    dismissUpdate,
+  } = usePWA();
+  
   // Player state (from reducer with FSM)
   const { state: playerState, actions } = usePlayerState();
   
@@ -104,29 +121,23 @@ const BassTrainer = () => {
 
   // Handle play button click (uses FSM transitions)
   const handlePlay = useCallback(async () => {
-    // Resume audio context
     await audio.resume();
     actions.setAudioReady(true);
 
-    // FSM guards: if already playing or counting down, ignore
     if (playerState.isPlaying || playerState.isCountingDown) return;
 
-    // If countdown is disabled, start immediately
     if (!playerState.isCountdownEnabled) {
-      actions.playImmediate();  // FSM: IDLE -> PLAYING
+      actions.playImmediate();
       scheduler.start();
       return;
     }
 
-    // Clear any previous countdown timeouts
     countdownTimeoutsRef.current.forEach(id => clearTimeout(id));
     countdownTimeoutsRef.current = [];
 
-    // Start countdown (FSM: IDLE -> COUNTDOWN)
     actions.play();
     audio.playCountdownBeep();
 
-    // Countdown sequence: 3 -> 2 -> 1 -> GO!
     const timeout1 = setTimeout(() => {
       actions.countdownTick();
       audio.playCountdownBeep();
@@ -140,24 +151,21 @@ const BassTrainer = () => {
     const timeout3 = setTimeout(() => {
       countdownTimeoutsRef.current = [];
       audio.playCountdownBeep(true);
-      actions.countdownComplete();  // FSM: COUNTDOWN -> PLAYING
+      actions.countdownComplete();
       scheduler.start();
     }, COUNTDOWN_CONFIG.interval * 3);
 
     countdownTimeoutsRef.current = [timeout1, timeout2, timeout3];
   }, [audio, playerState.isPlaying, playerState.isCountingDown, playerState.isCountdownEnabled, actions, scheduler]);
 
-  // Handle stop button click (FSM: any -> IDLE)
   const handleStop = useCallback(() => {
-    // Cancel any pending countdown timeouts
     countdownTimeoutsRef.current.forEach(id => clearTimeout(id));
     countdownTimeoutsRef.current = [];
     
     scheduler.stop();
-    actions.stop();  // FSM: any -> IDLE
+    actions.stop();
   }, [scheduler, actions]);
 
-  // Destructure player state for easier access
   const {
     isPlaying,
     isCountingDown,
@@ -175,6 +183,19 @@ const BassTrainer = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start py-4 sm:py-8 px-2 sm:px-4 font-[var(--font-body)]">
+      {/* PWA Components */}
+      <OfflineIndicator isOnline={isOnline} />
+      <PWAInstallBanner 
+        isInstallable={isInstallable && !isInstalled}
+        onInstall={install}
+        onDismiss={() => {}}
+      />
+      <UpdateNotification
+        isVisible={updateAvailable}
+        onUpdate={update}
+        onDismiss={dismissUpdate}
+      />
+      
       {/* Main Container */}
       <div className="max-w-6xl w-full">
         
@@ -221,7 +242,6 @@ const BassTrainer = () => {
           className="glass-strong rounded-2xl sm:rounded-3xl overflow-hidden mb-4 sm:mb-6 animate-fadeInUp" 
           style={{animationDelay: "0.2s"}}
         >
-          {/* Tab Section Header */}
           <div className="bg-[var(--color-primary-dark)]/50 px-3 sm:px-8 py-2 sm:py-4 border-b border-[var(--color-primary-medium)]/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -242,7 +262,6 @@ const BassTrainer = () => {
                 </div>
               </div>
               
-              {/* View Toggle Buttons */}
               <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => setViewMode(VIEW_MODES.TAB)}
@@ -273,7 +292,6 @@ const BassTrainer = () => {
                   <span className="hidden sm:inline">Diapasón</span>
                 </button>
                 
-                {/* Note Counter */}
                 <div className="font-mono text-xs sm:text-sm bg-[var(--color-primary-deep)] px-2 sm:px-4 py-1 sm:py-2 rounded-md sm:rounded-lg border border-[var(--color-primary-medium)] ml-1 sm:ml-2">
                   <span className="text-[var(--color-gold)]">{currentNoteIndex >= 0 ? currentNoteIndex + 1 : 0}</span>
                   <span className="text-[var(--color-primary-light)]"> / {tabData.length}</span>
@@ -282,7 +300,6 @@ const BassTrainer = () => {
             </div>
           </div>
 
-          {/* Conditional View Rendering */}
           {viewMode === VIEW_MODES.FRETBOARD ? (
             <FretboardView 
               tabData={tabData} 
@@ -329,7 +346,6 @@ const BassTrainer = () => {
           setTempo={actions.setTempo}
         />
 
-        {/* Audio Ready Notice */}
         {!isAudioReady && (
           <div 
             className="mt-3 sm:mt-6 glass rounded-lg sm:rounded-xl p-2 sm:p-4 border border-[var(--color-warning)]/30 
@@ -343,7 +359,6 @@ const BassTrainer = () => {
           </div>
         )}
 
-        {/* Footer */}
         <Footer />
       </div>
     </div>

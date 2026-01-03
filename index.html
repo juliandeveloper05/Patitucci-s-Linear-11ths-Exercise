@@ -6,11 +6,56 @@
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- PWA Primary Meta Tags -->
+  <meta name="application-name" content="Bass Academy" />
+  <meta name="theme-color" content="#C9A554" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#B8922E" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#C9A554" />
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- iOS Specific Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bass Academy" />
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+
+  <!-- iOS Splash Screens (optional, but recommended) -->
+  <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
+
+  <!-- Android Chrome -->
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- Microsoft Windows -->
+  <meta name="msapplication-TileColor" content="#0D1B2A" />
+  <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+  <meta name="msapplication-config" content="/browserconfig.xml" />
+
   <!-- SEO Meta Tags -->
   <meta name="description"
-    content="Bass Academy - Interactive bass training platform. Master arpeggios, scales, and techniques from legendary artists like John Patitucci." />
-  <meta name="keywords" content="bass academy, bass training, jazz bass, arpeggios, bass technique, music education" />
-  <meta name="author" content="Bass Academy" />
+    content="Bass Academy - Interactive bass training platform. Master arpeggios, scales, and techniques from legendary artists like John Patitucci. Practice offline with Web Audio synthesis." />
+  <meta name="keywords"
+    content="bass academy, bass training, jazz bass, arpeggios, bass technique, music education, PWA, offline practice" />
+  <meta name="author" content="Julian Javier Soto" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://bass-academy.netlify.app/" />
+  <meta property="og:title" content="Bass Academy | Interactive Bass Training" />
+  <meta property="og:description"
+    content="Master bass arpeggios and techniques with interactive tablature and Web Audio synthesis. Practice offline anytime, anywhere." />
+  <meta property="og:image" content="/icons/icon-512x512.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://bass-academy.netlify.app/" />
+  <meta property="twitter:title" content="Bass Academy | Interactive Bass Training" />
+  <meta property="twitter:description"
+    content="Master bass arpeggios and techniques with interactive tablature and Web Audio synthesis." />
+  <meta property="twitter:image" content="/icons/icon-512x512.png" />
 
   <!-- Google Fonts - Professional Academic Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,8 +68,70 @@
 </head>
 
 <body>
+  <noscript>
+    <div style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 100%);
+      color: #F8F5F0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+      text-align: center;
+    ">
+      <div>
+        <h1 style="font-size: 2rem; color: #C9A554; margin-bottom: 1rem;">🎸 Bass Academy</h1>
+        <p style="font-size: 1.125rem; color: #778DA9;">
+          JavaScript is required to run this application.
+          <br>
+          Please enable JavaScript in your browser settings.
+        </p>
+      </div>
+    </div>
+  </noscript>
+
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator)
+    {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('✅ SW registered:', registration.scope);
+
+            // Check for updates every 60 seconds
+            setInterval(() => {
+              registration.update();
+            }, 60000);
+          })
+          .catch(error => {
+            console.error('❌ SW registration failed:', error);
+          });
+      });
+    } else
+    {
+      console.warn('⚠️ Service Workers not supported');
+    }
+
+    // Log install prompt availability
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('✅ PWA installable');
+    });
+
+    // Log successful install
+    window.addEventListener('appinstalled', () => {
+      console.log('✅ PWA installed successfully');
+    });
+  </script>
 </body>
 
 </html>
