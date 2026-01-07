@@ -171,14 +171,16 @@ const BassTrainer = ({ selectedCategory, onBack }) => {
     actions.play();
     audio.playCountdownBeep();
     
-    // Countdown logic
-    let tick = 1;
+    // Countdown logic - track countdown value locally to avoid stale closures
+    let currentCount = COUNTDOWN_CONFIG.duration; // Starts at 3
     const interval = setInterval(() => {
-      if (tick < 3) {
-        actions.countdownTick();
+      currentCount--;
+      if (currentCount > 0) {
+        // Show 2, then 1
+        actions.setCountdown(currentCount);
         audio.playCountdownBeep();
-        tick++;
       } else {
+        // Countdown finished
         clearInterval(interval);
         audio.playCountdownBeep(true);
         actions.countdownComplete();

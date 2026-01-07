@@ -54,6 +54,13 @@ export function usePlayerState() {
       });
     }, [state.countdown]),
     
+    setCountdown: useCallback((value) => {
+      dispatch({ 
+        type: PLAYER_ACTIONS.SET_COUNTDOWN, 
+        payload: value 
+      });
+    }, []),
+    
     countdownComplete: useCallback(() => {
       transition(PlayerEvents.COUNTDOWN_COMPLETE);
     }, [transition]),
