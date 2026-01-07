@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Music, AlertCircle, Guitar, List, ArrowLeft, Maximize2 } from "lucide-react";
+import { Music, AlertCircle, Guitar, List, ArrowLeft, Maximize2, BarChart2 } from "lucide-react";
 
 // Components - Layout
 import Header from "./components/layout/Header.jsx";
@@ -34,6 +34,7 @@ import { useBassAudio } from "./hooks/useBassAudio.js";
 import { usePlayerState } from "./hooks/usePlayerState.js";
 import { useAudioScheduler } from "./hooks/useAudioScheduler.js";
 import { usePWA } from "./hooks/usePWA.js";
+import { usePracticeStats } from "./hooks/usePracticeStats.js";
 
 // Config
 import { THEME_CONFIG, COUNTDOWN_CONFIG, VIEW_MODES } from "./config/uiConfig.js";
@@ -46,6 +47,9 @@ import {
   PATTERNS,
   getPatternsByCategory 
 } from "./data/exerciseLibrary.js";
+
+// Stats
+import StatsModal from "./components/stats/StatsModal.jsx";
 
 const EXERCISE_STORAGE_KEY = 'bass-trainer-exercise-state';
 
@@ -67,6 +71,10 @@ const BassTrainer = ({ selectedCategory, onBack }) => {
   
   const [viewMode, setViewMode] = useState(VIEW_MODES.TAB);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  
+  // Practice Stats Hook
+  const { stats, formatTime } = usePracticeStats(playerState.isPlaying);
   
   // Exercise State - Initialize safe defaults
   const [exerciseState, setExerciseState] = useState(() => {
@@ -232,16 +240,28 @@ const BassTrainer = ({ selectedCategory, onBack }) => {
       <UpdateNotification isVisible={updateAvailable} onUpdate={update} onDismiss={dismissUpdate} />
       
       <div className="max-w-6xl w-full">
-        {/* Navigation Back Button - Mobile Optimized */}
-        <button 
-          onClick={onBack}
-          className="mb-3 sm:mb-4 md:mb-6 flex items-center gap-1.5 sm:gap-2 text-[var(--color-primary-light)] hover:text-[var(--color-gold)] transition-colors group"
-        >
-          <div className="p-1.5 sm:p-2 rounded-full glass group-hover:bg-[var(--color-primary-dark)]">
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <span className="font-medium text-xs sm:text-sm md:text-base">Volver a Artistas</span>
-        </button>
+        {/* Navigation Header with Back Button and Stats */}
+        <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+          <button 
+            onClick={onBack}
+            className="flex items-center gap-1.5 sm:gap-2 text-[var(--color-primary-light)] hover:text-[var(--color-gold)] transition-colors group"
+          >
+            <div className="p-1.5 sm:p-2 rounded-full glass group-hover:bg-[var(--color-primary-dark)]">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <span className="font-medium text-xs sm:text-sm md:text-base">Volver a Artistas</span>
+          </button>
+          
+          {/* Stats Button */}
+          <button 
+            onClick={() => setIsStatsOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-[var(--color-primary-medium)] text-[var(--color-gold)] hover:bg-[var(--color-primary-medium)] transition-all"
+            aria-label="View practice statistics"
+          >
+            <BarChart2 size={16} />
+            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Stats</span>
+          </button>
+        </div>
 
         <Header headerInfo={headerInfo} isPlaying={isPlaying} isCountingDown={isCountingDown} theme={theme} onThemeChange={handleThemeChange} />
 
@@ -315,6 +335,14 @@ const BassTrainer = ({ selectedCategory, onBack }) => {
 
         <Footer />
       </div>
+
+      {/* Stats Modal */}
+      <StatsModal 
+        isOpen={isStatsOpen} 
+        onClose={() => setIsStatsOpen(false)} 
+        stats={stats}
+        formatTime={formatTime}
+      />
 
       {/* Fullscreen Tablature Mode */}
       {isFullscreen && (

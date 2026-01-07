@@ -170,8 +170,8 @@ The app will be available at `http://localhost:5173`
 
 ### 🔜 Upcoming (v2.4.0)
 - [ ] Scale patterns (Major, Minor, Modes)
-- [ ] Practice session statistics
-- [ ] Progress tracking with LocalStorage
+- [x] Practice session statistics
+- [x] Progress tracking with LocalStorage
 - [ ] Custom exercise builder
 - [ ] Audio recording for self-review
 
