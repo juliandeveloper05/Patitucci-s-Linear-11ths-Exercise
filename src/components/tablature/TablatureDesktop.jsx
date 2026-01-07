@@ -17,7 +17,8 @@ function TablatureDesktop({
   secondRoot = 'A', 
   secondPattern = 'linear11thsMin',
   tempo = 60,
-  isPlaying = false
+  isPlaying = false,
+  onMeasureClick = null
 }) {
   const scrollContainerRef = useRef(null);
   const noteRefs = useRef([]);
@@ -69,6 +70,7 @@ function TablatureDesktop({
           secondRoot={secondRoot}
           secondPattern={secondPattern}
           variant="desktop"
+          onMeasureClick={onMeasureClick}
         />
       </div>
     </div>

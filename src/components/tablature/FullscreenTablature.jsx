@@ -166,6 +166,7 @@ const FullscreenTablature = ({
             secondPattern={secondPattern}
             tempo={tempo}
             isPlaying={isPlaying}
+            onMeasureClick={handleMeasureClick}
           />
         ) : (
           <TablatureDesktop
@@ -177,33 +178,9 @@ const FullscreenTablature = ({
             secondPattern={secondPattern}
             tempo={tempo}
             isPlaying={isPlaying}
+            onMeasureClick={handleMeasureClick}
           />
         )}
-
-        {/* Clickable Measure Selectors */}
-        <div className="flex justify-center gap-4 mt-4">
-          <button
-            onClick={() => handleMeasureClick(1)}
-            className="fullscreen-measure-button glass px-4 py-3 border-l-4 border-[var(--color-gold)] text-center min-w-[180px]"
-            aria-label="Change Measure 1 root note"
-          >
-            <p className="text-xs uppercase tracking-wider text-[var(--color-primary-light)] mb-1">Measure 1</p>
-            <p className="font-mono font-bold text-[var(--color-gold)]">
-              {formatNoteName(selectedRoot)}{getPatternShortName(selectedPattern)}
-            </p>
-          </button>
-          <span className="flex items-center text-[var(--color-primary-medium)]">&gt;</span>
-          <button
-            onClick={() => handleMeasureClick(2)}
-            className="fullscreen-measure-button glass px-4 py-3 border-l-4 border-[var(--color-info)] text-center min-w-[180px]"
-            aria-label="Change Measure 2 root note"
-          >
-            <p className="text-xs uppercase tracking-wider text-[var(--color-primary-light)] mb-1">Measure 2</p>
-            <p className="font-mono font-bold text-[var(--color-info)]">
-              {formatNoteName(secondRoot)}{getPatternShortName(secondPattern)}
-            </p>
-          </button>
-        </div>
       </div>
 
       {/* Controles de reproducción */}

@@ -18,7 +18,8 @@ function TablatureMobile({
   secondRoot = 'A', 
   secondPattern = 'linear11thsMin',
   tempo = 60,
-  isPlaying = false
+  isPlaying = false,
+  onMeasureClick = null
 }) {
   const measure1Ref = useRef(null);
   const measure2Ref = useRef(null);
@@ -64,6 +65,7 @@ function TablatureMobile({
             secondRoot={secondRoot}
             secondPattern={secondPattern}
             variant="measure1"
+            onMeasureClick={onMeasureClick}
           />
           
           {/* 4 Strings - Compact Tab */}
@@ -104,6 +106,7 @@ function TablatureMobile({
             secondRoot={secondRoot}
             secondPattern={secondPattern}
             variant="measure2"
+            onMeasureClick={onMeasureClick}
           />
           
           {/* 4 Strings - Compact Tab */}
