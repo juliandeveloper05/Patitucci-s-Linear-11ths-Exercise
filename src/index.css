@@ -397,3 +397,201 @@ body {
 .progress-indicator-active {
   animation: progress-glow 0.5s ease-in-out infinite;
 }
+
+/* ============================================
+   MOBILE TABLATURE IMPROVEMENTS
+   Responsive optimizations for bass strings
+   ============================================ */
+
+/* Variables CSS para líneas de cuerda por theme */
+:root {
+  /* String line appearance - Desktop & Mobile */
+  --string-line-height: 2.5px;
+  --string-line-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Light Theme - String Lines */
+[data-theme="light"] {
+  --string-line-height: 2.5px;
+  --string-line-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Practice Theme - Neon String Lines */
+[data-theme="practice"] {
+  --string-line-height: 3px;
+  --string-line-shadow: 0 0 6px rgba(0, 255, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom Scrollbar for Tablature - Themed */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--color-primary-dark);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-gold);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold-light);
+}
+
+/* Scrollbar color variants */
+.scrollbar-thumb-gold::-webkit-scrollbar-thumb {
+  background: var(--color-gold);
+}
+
+.scrollbar-thumb-info::-webkit-scrollbar-thumb {
+  background: var(--color-info);
+}
+
+.scrollbar-track-dark::-webkit-scrollbar-track {
+  background: var(--color-primary-dark);
+}
+
+/* Practice theme scrollbar - Green */
+[data-theme="practice"] .scrollbar-thumb-gold::-webkit-scrollbar-thumb {
+  background: #00FF00;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  /* Ensure minimum touch targets */
+  .tab-note-mobile {
+    min-width: 2rem;
+    min-height: 2rem;
+    touch-action: manipulation;
+  }
+  
+  /* Increase string height for better visibility */
+  .tab-string-mobile {
+    min-height: 2.25rem;
+  }
+  
+  /* Better spacing in mobile containers */
+  .glass {
+    padding: 0.75rem;
+  }
+  
+  /* Smoother scrolling on mobile */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide scrollbar on iOS but keep functionality */
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .overflow-x-auto {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Keep scrollbar visible for tablature scrollers */
+  .scrollbar-thin::-webkit-scrollbar {
+    display: block !important;
+    height: 4px;
+  }
+  
+  .scrollbar-thin {
+    scrollbar-width: thin !important;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 375px) {
+  .tab-note-mobile {
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+  }
+}
+
+/* Mobile Landscape - Optimize for horizontal */
+@media (max-height: 500px) and (orientation: landscape) {
+  .tab-string-mobile {
+    min-height: 2rem;
+  }
+  
+  .tab-note-mobile {
+    min-width: 1.875rem;
+    min-height: 1.875rem;
+  }
+  
+  /* Reduce padding in landscape to maximize space */
+  .glass {
+    padding: 0.5rem;
+  }
+}
+
+/* Practice Theme - Extra Glow for Active Notes */
+[data-theme="practice"] .animate-pulse {
+  animation: practice-pulse 1s ease-in-out infinite;
+}
+
+@keyframes practice-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 16px var(--color-active-glow),
+      0 0 32px var(--color-active-glow),
+      0 0 48px var(--color-active-glow);
+  }
+  50% {
+    box-shadow: 
+      0 0 24px var(--color-active-glow),
+      0 0 48px var(--color-active-glow),
+      0 0 72px var(--color-active-glow);
+  }
+}
+
+/* Smooth scroll hints animation */
+@keyframes scroll-hint-fade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.scroll-hint {
+  animation: scroll-hint-fade 2s ease-in-out infinite;
+}
+
+/* Better focus states for accessibility */
+.tab-note-mobile:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --string-line-height: 3.5px;
+  }
+  
+  .tab-note-mobile {
+    border-width: 3px;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .tab-note-mobile,
+  .overflow-x-auto {
+    transition: none;
+    animation: none;
+  }
+  
+  .overflow-x-auto {
+    scroll-behavior: auto;
+  }
+  
+  .scroll-hint {
+    animation: none;
+    opacity: 0.6;
+  }
+}
