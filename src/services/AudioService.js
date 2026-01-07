@@ -105,6 +105,43 @@ class AudioService {
   }
 
   /**
+   * Immediately stop all scheduled sounds by muting master gains
+   * This is called when the user pauses playback
+   */
+  stopAllSounds() {
+    if (!this.context) return;
+    
+    const currentTime = this.context.currentTime;
+    
+    // Immediately ramp down all master gains to stop scheduled sounds
+    if (this.masterGains.bass) {
+      this.masterGains.bass.gain.cancelScheduledValues(currentTime);
+      this.masterGains.bass.gain.setValueAtTime(this.masterGains.bass.gain.value, currentTime);
+      this.masterGains.bass.gain.linearRampToValueAtTime(0, currentTime + 0.01);
+    }
+    
+    if (this.masterGains.metronome) {
+      this.masterGains.metronome.gain.cancelScheduledValues(currentTime);
+      this.masterGains.metronome.gain.setValueAtTime(this.masterGains.metronome.gain.value, currentTime);
+      this.masterGains.metronome.gain.linearRampToValueAtTime(0, currentTime + 0.01);
+    }
+  }
+
+  /**
+   * Restore master gains after stopping (call before playing again)
+   * @param {number} bassVolume - Bass volume (0.0 - 1.0)
+   * @param {number} metronomeVolume - Metronome volume (0.0 - 1.0)
+   */
+  restoreVolumes(bassVolume = 0.7, metronomeVolume = 0.5) {
+    if (this.masterGains.bass) {
+      this.masterGains.bass.gain.value = bassVolume;
+    }
+    if (this.masterGains.metronome) {
+      this.masterGains.metronome.gain.value = metronomeVolume;
+    }
+  }
+
+  /**
    * Load a single audio sample
    * @param {string} url - Path to the audio file
    * @returns {Promise<AudioBuffer|null>}

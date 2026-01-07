@@ -167,6 +167,8 @@ const BassTrainer = ({ selectedCategory, onBack }) => {
 
   const handlePlay = useCallback(async () => {
     await audio.resume();
+    // Restore volumes before playing (in case they were muted by stopAllSounds)
+    audio.restoreVolumes(playerState.bassVolume, playerState.metronomeVolume);
     actions.setAudioReady(true);
     if (playerState.isPlaying || playerState.isCountingDown) return;
 
@@ -203,8 +205,10 @@ const BassTrainer = ({ selectedCategory, onBack }) => {
     countdownTimeoutsRef.current.forEach(id => clearInterval(id));
     countdownTimeoutsRef.current = [];
     scheduler.stop();
+    // Immediately silence all scheduled sounds
+    audio.stopAllSounds();
     actions.stop();
-  }, [scheduler, actions]);
+  }, [scheduler, actions, audio]);
 
   // Volume
   const handleBassVolume = (v) => { actions.setBassVolume(v); audio.setBassVolume(v); };

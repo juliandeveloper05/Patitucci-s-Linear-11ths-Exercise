@@ -76,6 +76,20 @@ export function useBassAudio() {
     serviceRef.current.setMetronomeVolume(volume);
   }, []);
   
+  /**
+   * Stop all scheduled sounds immediately
+   */
+  const stopAllSounds = useCallback(() => {
+    serviceRef.current.stopAllSounds();
+  }, []);
+
+  /**
+   * Restore volumes after stopping
+   */
+  const restoreVolumes = useCallback((bassVolume, metronomeVolume) => {
+    serviceRef.current.restoreVolumes(bassVolume, metronomeVolume);
+  }, []);
+
   return {
     resume,
     getCurrentTime,
@@ -85,6 +99,8 @@ export function useBassAudio() {
     isReady,
     setBassVolume,
     setMetronomeVolume,
+    stopAllSounds,
+    restoreVolumes,
     serviceRef,
   };
 }
