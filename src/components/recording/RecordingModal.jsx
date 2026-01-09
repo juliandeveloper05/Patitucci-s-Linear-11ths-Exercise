@@ -8,6 +8,8 @@
 import React, { useEffect, useCallback } from 'react';
 import RecordingsList from '../../features/recording/components/RecordingsList';
 import RecordingControls from '../../features/recording/components/RecordingControls';
+import MetronomeControls from '../../features/recording/components/MetronomeControls';
+import { useRecordingMetronome } from '../../features/recording/hooks/useRecordingMetronome';
 import { formatDuration, formatFileSize } from '../../config/recordingConfig';
 
 // ============================================
@@ -112,6 +114,68 @@ const RecordingModal = ({
     createPlaybackUrl,
     revokePlaybackUrl,
   } = storageHook;
+
+  // ============================================
+  // METRONOME STATE
+  // ============================================
+  
+  const [isMetronomeEnabled, setIsMetronomeEnabled] = React.useState(true);
+  const [metronomeTempo, setMetronomeTempo] = React.useState(exerciseContext?.tempo || 100);
+  
+  // Initialize metronome hook
+  const metronome = useRecordingMetronome({
+    initialTempo: metronomeTempo,
+    onPreRollComplete: () => {
+      // Start actual recording when pre-roll finishes
+      startRecording();
+    },
+  });
+  
+  // Sync tempo with editable metadata
+  React.useEffect(() => {
+    const tempoNum = parseInt(editableMetadata.tempo);
+    if (tempoNum && tempoNum >= 40 && tempoNum <= 300) {
+      setMetronomeTempo(tempoNum);
+    }
+  }, [editableMetadata.tempo]);
+  
+  // Sync metronome tempo
+  React.useEffect(() => {
+    metronome.setTempo(metronomeTempo);
+  }, [metronomeTempo]);
+  
+  // Stop metronome when recording stops
+  React.useEffect(() => {
+    if (isStopped && metronome.isPlaying) {
+      metronome.stop();
+    }
+  }, [isStopped, metronome.isPlaying]);
+  
+  // ============================================
+  // CUSTOM START HANDLER (with metronome)
+  // ============================================
+  
+  const handleStartWithMetronome = React.useCallback(() => {
+    if (isMetronomeEnabled) {
+      // Start metronome with pre-roll (it will call startRecording when done)
+      metronome.start(true);
+    } else {
+      // No metronome, start recording directly
+      startRecording();
+    }
+  }, [isMetronomeEnabled, metronome, startRecording]);
+  
+  // Handle stop - also stop metronome
+  const handleStop = React.useCallback(() => {
+    metronome.stop();
+    stopRecording();
+  }, [metronome, stopRecording]);
+  
+  // Handle cancel - also stop metronome
+  const handleCancel = React.useCallback(() => {
+    metronome.stop();
+    cancelRecording();
+  }, [metronome, cancelRecording]);
 
   // ============================================
   // KEYBOARD HANDLING
@@ -312,6 +376,27 @@ const RecordingModal = ({
         <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'record' && (
             <div className="max-w-xl mx-auto">
+              {/* Metronome Controls */}
+              <div className="mb-4">
+                <MetronomeControls
+                  isEnabled={isMetronomeEnabled}
+                  onToggle={() => setIsMetronomeEnabled(!isMetronomeEnabled)}
+                  tempo={metronomeTempo}
+                  onTempoChange={(t) => {
+                    setMetronomeTempo(t);
+                    handleMetadataChange('tempo', t.toString());
+                  }}
+                  timeSignature={metronome.timeSignature}
+                  onTimeSignatureChange={metronome.setTimeSignature}
+                  isPlaying={metronome.isPlaying}
+                  isPreRoll={metronome.isPreRoll}
+                  currentBeat={metronome.currentBeat}
+                  preRollBeat={metronome.preRollBeat}
+                  preRollTotal={metronome.preRollTotal}
+                  disabled={isRecording || isPaused}
+                />
+              </div>
+              
               {/* Recording Controls */}
               <RecordingControls
                 recordingState={recordingState}
@@ -320,11 +405,11 @@ const RecordingModal = ({
                 audioLevel={audioLevel}
                 audioBlob={audioBlob}
                 error={error}
-                onStart={startRecording}
-                onStop={stopRecording}
+                onStart={handleStartWithMetronome}
+                onStop={handleStop}
                 onPause={pauseRecording}
                 onResume={resumeRecording}
-                onCancel={cancelRecording}
+                onCancel={handleCancel}
                 onSave={handleSave}
                 isSupported={isSupported}
                 variant="full"
@@ -333,7 +418,7 @@ const RecordingModal = ({
               {/* Preview Player (when stopped with recording) */}
               {isStopped && audioUrl && (
                 <div className="mt-6 p-4 bg-white/5 rounded-xl">
-                  <h3 className="text-sm font-medium text-white/70 mb-3">Preview</h3>
+                  <h3 className="text-sm font-medium text-white/70 mb-3">Preview (sin metrónomo)</h3>
                   <audio 
                     src={audioUrl} 
                     controls 
