@@ -191,7 +191,7 @@ src/
 
 ## 🌐 Try It Now
 
-**Live Demo:** [bass-academy-interactive-bass-training.vercel.app](https://bass-academy-interactive-bass-training.vercel.app)
+**Live Demo:** [bass-academy-interactive-bass-train.vercel.app](https://bass-academy-interactive-bass-train.vercel.app/)
 
 No installation required — works directly in your browser!
 
