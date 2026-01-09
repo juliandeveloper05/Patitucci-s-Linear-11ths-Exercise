@@ -1,5 +1,105 @@
-import React from "react";
-import { Sparkles, TrendingUp, Zap, Edit3 } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { Sparkles, TrendingUp, Zap, Edit3, Music } from "lucide-react";
+
+/**
+ * Hook for Magnetic Effect
+ */
+function useMagnetic(ref, strength = 30) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const handleMouseMove = (e) => {
+      const { left, top, width, height } = element.getBoundingClientRect();
+      const centerX = left + width / 2;
+      const centerY = top + height / 2;
+      
+      const x = (e.clientX - centerX) / width * strength;
+      const y = (e.clientY - centerY) / height * strength;
+
+      setPosition({ x, y });
+    };
+
+    const handleMouseLeave = () => {
+      setPosition({ x: 0, y: 0 });
+    };
+
+    element.addEventListener("mousemove", handleMouseMove);
+    element.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      element.removeEventListener("mousemove", handleMouseMove);
+      element.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [ref, strength]);
+
+  return position;
+}
+
+/**
+ * Magnetic Wrapper Component
+ */
+function Magnetic({ children, className = "", strength = 20 }) {
+  const ref = useRef(null);
+  const transform = useMagnetic(ref, strength);
+
+  return (
+    <div 
+      ref={ref}
+      className={`${className}`}
+      style={{ 
+        transform: `translate(${transform.x}px, ${transform.y}px)`,
+        transition: "transform 0.2s cubic-bezier(0.33, 1, 0.68, 1)"
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Floating Music Particles Component
+ */
+function MusicParticles() {
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    // Generate static particles on mount to avoid hydration mismatch
+    const newParticles = Array.from({ length: 15 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDuration: `${15 + Math.random() * 20}s`,
+      animationDelay: `-${Math.random() * 20}s`,
+      opacity: 0.1 + Math.random() * 0.2,
+      size: 10 + Math.random() * 20,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute text-white/10"
+          style={{
+            left: p.left,
+            top: p.top,
+            fontSize: `${p.size}px`,
+            opacity: p.opacity,
+            animation: `float-particle ${p.animationDuration} linear infinite`,
+            animationDelay: p.animationDelay,
+          }}
+        >
+          <Music />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * Artist data for HomeScreen
@@ -193,22 +293,41 @@ function ArtistCard({ artist, onClick, index }) {
  * Main HomeScreen Component
  */
 function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
+  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const updateMousePos = (ev) => {
+      setMousePos({ x: ev.clientX, y: ev.clientY });
+    };
+    window.addEventListener('mousemove', updateMousePos);
+    return () => {
+      window.removeEventListener('mousemove', updateMousePos);
+    };
+  }, []);
+
+
+
   return (
     <div
       className="home-screen-bg min-h-screen relative overflow-hidden"
+      style={{
+        "--mouse-x": `${mousePos.x}px`,
+        "--mouse-y": `${mousePos.y}px`,
+      }}
     >
+      <div className="spotlight-overlay" />
       <div className="grain-overlay" />
-
+      <MusicParticles />
 
       {/* Radial gradient overlays for depth */}
       <div
-        className="fixed top-0 right-0 w-[800px] h-[800px] rounded-full opacity-10 pointer-events-none blur-3xl"
+        className="fixed top-0 right-0 w-[800px] h-[800px] rounded-full opacity-10 pointer-events-none blur-3xl animate-[pulse-glow_8s_ease-in-out_infinite]"
         style={{
           background: "radial-gradient(circle, #C9A554 0%, transparent 70%)",
         }}
       />
       <div
-        className="fixed bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-10 pointer-events-none blur-3xl"
+        className="fixed bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-10 pointer-events-none blur-3xl animate-[pulse-glow_10s_ease-in-out_infinite_reverse]"
         style={{
           background: "radial-gradient(circle, #3B82F6 0%, transparent 70%)",
         }}
@@ -222,19 +341,21 @@ function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
         {/* Header */}
         <header className="landscape-compact-header text-center mb-8 sm:mb-12 lg:mb-16 relative px-4 max-w-5xl mx-auto">
           {/* Logo */}
-          <div
-            className="landscape-compact-logo inline-flex items-center justify-center rounded-3xl 
-                        mb-5 sm:mb-7 lg:mb-8 shadow-2xl animate-[float_3s_ease-in-out_infinite] overflow-hidden"
-            style={{
-              boxShadow: "0 20px 60px rgba(201, 165, 84, 0.3)",
-            }}
-          >
-            <img
-              src="/logo.png"
-              alt="Bass Academy Logo"
-              className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 object-cover"
-            />
-          </div>
+          <Magnetic strength={30}>
+            <div
+              className="landscape-compact-logo inline-flex items-center justify-center rounded-3xl 
+                          mb-5 sm:mb-7 lg:mb-8 shadow-2xl animate-[float_3s_ease-in-out_infinite] overflow-hidden"
+              style={{
+                boxShadow: "0 20px 60px rgba(201, 165, 84, 0.3)",
+              }}
+            >
+              <img
+                src="/logo.png"
+                alt="Bass Academy Logo"
+                className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 object-cover"
+              />
+            </div>
+          </Magnetic>
 
           {/* Main Title */}
           <h1
@@ -283,6 +404,9 @@ function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
             <div
               className="custom-builder-shine absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
             />
+            
+            {/* Holographic Wireframe Grid */}
+            <div className="holo-wireframe" />
 
             <div className="relative flex items-center gap-4 sm:gap-6">
               {/* Icon */}
@@ -372,6 +496,63 @@ function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
         @keyframes shine {
           0% { background-position: -200% center; }
           100% { background-position: 200% center; }
+        }
+        
+        @keyframes float-particle {
+          0% {
+            transform: translateY(100vh) rotate(0deg);
+          }
+          100% {
+            transform: translateY(-20vh) rotate(360deg);
+          }
+        }
+        
+        /* Global Spotlight */
+        .spotlight-overlay {
+          background: radial-gradient(
+            600px circle at var(--mouse-x) var(--mouse-y),
+            rgba(255, 255, 255, 0.06),
+            transparent 40%
+          );
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 2; /* Content is at z-10, this should be below content but above bg */
+        }
+        
+        /* Holographic Wireframe */
+        .holo-wireframe {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) perspective(1000px) rotateX(60deg) scale(0.8);
+          width: 200%;
+          height: 200%;
+          background-image: 
+            linear-gradient(rgba(201, 165, 84, 0.3) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(201, 165, 84, 0.3) 1px, transparent 1px);
+          background-size: 40px 40px;
+          border-radius: 50%;
+          opacity: 0;
+          transition: all 0.5s ease;
+          pointer-events: none;
+          z-index: 0;
+          mask-image: radial-gradient(circle, black 30%, transparent 70%);
+          -webkit-mask-image: radial-gradient(circle, black 30%, transparent 70%);
+        }
+        
+        .custom-builder-card:hover .holo-wireframe {
+          opacity: 1;
+          transform: translate(-50%, -40%) perspective(1000px) rotateX(45deg) scale(1.2);
+          animation: holo-grid-scroll 20s linear infinite;
+        }
+        
+        @keyframes holo-grid-scroll {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 1000px; }
         }
         
         /* Mobile Landscape Optimizations */
