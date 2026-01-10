@@ -706,3 +706,60 @@ body {
     transform: none !important;
   }
 }
+
+/* ============================================
+   POWER SAVING MODE
+   Activated via data-power-saving attribute
+   Reduces animations and effects for battery
+   ============================================ */
+[data-power-saving="true"] {
+  /* Disable all CSS animations */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  
+  /* Disable expensive backdrop filters */
+  .glass,
+  .glass-strong {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  
+  /* Simplify shadows */
+  .glass {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  /* Hide decorative particles */
+  .music-particles,
+  .floating-particle,
+  [aria-hidden="true"] canvas {
+    display: none !important;
+  }
+  
+  /* Static states for animated elements */
+  .animate-spin-slow,
+  .animate-pulse-glow,
+  .animate-float,
+  .animate-shimmer,
+  .animate-fadeInUp,
+  .animate-haptic-pulse,
+  .progress-indicator-active,
+  .scroll-hint {
+    animation: none !important;
+    opacity: 1;
+  }
+  
+  /* Disable hover glow effects */
+  button:hover,
+  a:hover {
+    box-shadow: none !important;
+  }
+}
+

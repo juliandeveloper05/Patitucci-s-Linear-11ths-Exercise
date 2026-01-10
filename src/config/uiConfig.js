@@ -28,3 +28,12 @@ export const THEME_CONFIG = {
   default: 'dark',
   options: ['dark', 'light', 'practice'],
 };
+
+// Power Saving / Battery Mode
+export const POWER_SAVING_CONFIG = {
+  storageKey: 'bass-trainer-power-saving',
+  batteryThreshold: 0.2, // 20% battery triggers low-power mode
+  rafThrottleMs: 100,    // Throttle rAF to ~10fps in power saving
+  disableParticles: true,
+  disableAnimations: true,
+};

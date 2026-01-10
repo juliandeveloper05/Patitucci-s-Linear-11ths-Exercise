@@ -1,7 +1,8 @@
-import React, { useState, Component } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import HomeScreen from './components/HomeScreen';
 import BassTrainer from './BassTrainer';
 import CustomBuilderRouter from './components/builder/CustomBuilderRouter';
+import { usePowerSaving } from './hooks/usePowerSaving';
 import './App.css';
 
 // Error Boundary para capturar errores
@@ -71,6 +72,14 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('home');
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [customExerciseConfig, setCustomExerciseConfig] = useState(null);
+  
+  // Power Saving Mode
+  const powerSaving = usePowerSaving();
+
+  // Set data-power-saving attribute on document element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-power-saving', powerSaving.isPowerSaving.toString());
+  }, [powerSaving.isPowerSaving]);
 
   /**
    * Navigate to trainer with specific artist
@@ -116,6 +125,7 @@ const App = () => {
         <HomeScreen 
           onSelectArtist={handleArtistSelect}
           onSelectCustomBuilder={handleCustomBuilderSelect}
+          isPowerSaving={powerSaving.isPowerSaving}
         />
       ) : currentScreen === 'customBuilder' ? (
         <ErrorBoundary>

@@ -276,20 +276,23 @@ const ArtistCard = memo(function ArtistCard({ artist, onClick }) {
 
 /**
  * Main HomeScreen Component - Optimized for Performance
+ * @param {boolean} isPowerSaving - If true, skip particles and expensive effects
  */
-function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
+function HomeScreen({ onSelectArtist, onSelectCustomBuilder, isPowerSaving = false }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const rafRef = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
 
   // Throttled mouse tracking using requestAnimationFrame
+  // Skip when power saving is active
   useEffect(() => {
     let isUpdating = false;
 
     const updateMousePos = (ev) => {
       mousePosRef.current = { x: ev.clientX, y: ev.clientY };
       
-      if (!isUpdating) {
+      // Skip rAF updates when power saving is active
+      if (!isUpdating && !isPowerSaving) {
         isUpdating = true;
         rafRef.current = requestAnimationFrame(() => {
           setMousePos(mousePosRef.current);
@@ -298,7 +301,10 @@ function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
       }
     };
 
-    window.addEventListener('mousemove', updateMousePos, { passive: true });
+    // Don't even attach listener if power saving is active
+    if (!isPowerSaving) {
+      window.addEventListener('mousemove', updateMousePos, { passive: true });
+    }
     
     return () => {
       window.removeEventListener('mousemove', updateMousePos);
@@ -306,7 +312,7 @@ function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, []);
+  }, [isPowerSaving]);
 
   const handleCustomBuilderClick = useCallback(() => {
     onSelectCustomBuilder();
@@ -322,7 +328,8 @@ function HomeScreen({ onSelectArtist, onSelectCustomBuilder }) {
     >
       <div className="spotlight-overlay" />
       <div className="grain-overlay" />
-      <MusicParticles />
+      {/* Skip particles when power saving is active */}
+      {!isPowerSaving && <MusicParticles />}
 
       {/* Radial gradient overlays - Optimized with reduced blur */}
       <div className="radial-glow-gold" />
