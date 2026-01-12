@@ -2,6 +2,8 @@
  * useLoopMode Hook - Bass Academy
  * Manages playhead position and loop state using requestAnimationFrame
  * synced to audioContext.currentTime for drift-free animation
+ * 
+ * FIXED: Uses refs to avoid stale closures and dependency cycles
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -32,26 +34,52 @@ export function useLoopMode({
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
   const lastLoopCountRef = useRef(0);
-  const playheadRef = useRef(0); // For direct DOM updates if needed
+  const playheadRef = useRef(0);
   
+  // Refs to hold current values (avoids stale closure issues)
+  const schedulerRef = useRef(scheduler);
+  const tempoRef = useRef(tempo);
+  const loopLengthRef = useRef(loopLength);
+  const onLoopRestartRef = useRef(onLoopRestart);
+  
+  // Keep refs in sync with props
+  useEffect(() => {
+    schedulerRef.current = scheduler;
+  }, [scheduler]);
+  
+  useEffect(() => {
+    tempoRef.current = tempo;
+  }, [tempo]);
+  
+  useEffect(() => {
+    loopLengthRef.current = loopLength;
+  }, [loopLength]);
+  
+  useEffect(() => {
+    onLoopRestartRef.current = onLoopRestart;
+  }, [onLoopRestart]);
+
   // Calculate loop duration in seconds
   const getLoopDuration = useCallback(() => {
-    return (60 / tempo) * RHYTHM_CONFIG.beatsPerMeasure * loopLength;
-  }, [tempo, loopLength]);
+    return (60 / tempoRef.current) * RHYTHM_CONFIG.beatsPerMeasure * loopLengthRef.current;
+  }, []);
 
   /**
    * Animation tick - called every frame via rAF
-   * Uses audioContext.currentTime for precise sync
+   * Uses refs to access current values without dependencies
    */
   const tick = useCallback(() => {
-    const audioContext = scheduler?.getAudioContext?.();
+    const audioContext = schedulerRef.current?.getAudioContext?.();
     if (!audioContext) {
+      // Keep trying until audioContext is available
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
 
     const now = audioContext.currentTime;
-    const loopDuration = (60 / tempo) * RHYTHM_CONFIG.beatsPerMeasure * loopLength;
+    const currentTempo = tempoRef.current;
+    const currentLoopLength = loopLengthRef.current;
+    const loopDuration = (60 / currentTempo) * RHYTHM_CONFIG.beatsPerMeasure * currentLoopLength;
     const elapsed = now - startTimeRef.current;
     
     // Handle negative elapsed time (before start)
@@ -67,31 +95,42 @@ export function useLoopMode({
     const currentLoopCount = Math.floor(elapsed / loopDuration);
     if (currentLoopCount > lastLoopCountRef.current) {
       lastLoopCountRef.current = currentLoopCount;
-      onLoopRestart?.();
+      onLoopRestartRef.current?.();
     }
     
     // Update playhead ref for direct DOM access
     playheadRef.current = progress;
     
-    // Update React state (throttled to avoid excessive re-renders)
+    // Update React state
     setPlayhead(progress);
     
     // Calculate which note the playhead is on
-    const beatProgress = progress * RHYTHM_CONFIG.beatsPerMeasure * loopLength;
+    const beatProgress = progress * RHYTHM_CONFIG.beatsPerMeasure * currentLoopLength;
     const currentBeat = Math.floor(beatProgress);
     const noteIndex = currentBeat * RHYTHM_CONFIG.tripletsPerBeat;
     
     setHighlightNoteIndex(noteIndex);
     
+    // Continue animation loop
     rafRef.current = requestAnimationFrame(tick);
-  }, [scheduler, tempo, loopLength, onLoopRestart]);
+  }, []); // No dependencies - uses refs
 
   /**
    * Start the playhead animation
    */
   const start = useCallback(() => {
-    const audioContext = scheduler?.getAudioContext?.();
-    if (!audioContext) return;
+    const audioContext = schedulerRef.current?.getAudioContext?.();
+    
+    // If audioContext not ready, retry in 50ms
+    if (!audioContext) {
+      const retryTimeout = setTimeout(() => {
+        if (rafRef.current === null) {
+          start();
+        }
+      }, 50);
+      // Store timeout ref for cleanup if needed
+      return () => clearTimeout(retryTimeout);
+    }
     
     startTimeRef.current = audioContext.currentTime;
     lastLoopCountRef.current = 0;
@@ -104,7 +143,7 @@ export function useLoopMode({
       cancelAnimationFrame(rafRef.current);
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, [scheduler, tick]);
+  }, [tick]);
 
   /**
    * Stop the playhead animation
@@ -128,12 +167,12 @@ export function useLoopMode({
     playheadRef.current = clamped;
     
     // Recalculate start time to match new position
-    const audioContext = scheduler?.getAudioContext?.();
+    const audioContext = schedulerRef.current?.getAudioContext?.();
     if (audioContext) {
       const loopDuration = getLoopDuration();
       startTimeRef.current = audioContext.currentTime - (clamped * loopDuration);
     }
-  }, [scheduler, getLoopDuration]);
+  }, [getLoopDuration]);
 
   // Auto-start/stop based on isPlaying prop
   useEffect(() => {
@@ -142,6 +181,14 @@ export function useLoopMode({
     } else {
       stop();
     }
+    
+    // Cleanup on effect re-run
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
   }, [isPlaying, start, stop]);
 
   // Cleanup on unmount
