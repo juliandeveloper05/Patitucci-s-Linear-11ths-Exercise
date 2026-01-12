@@ -152,9 +152,9 @@ export function useAudioScheduler({
     playIndexRef,
     nextNoteTimeRef,
     // Loop Mode extensions
-    getAudioContext: () => audio.serviceRef?.current?.audioContext,
+    getAudioContext: () => audio.serviceRef?.current?.context,
     getLoopRelativeTime: () => {
-      const ctx = audio.serviceRef?.current?.audioContext;
+      const ctx = audio.serviceRef?.current?.context;
       if (!ctx) return 0;
       const state = stateRef.current;
       const loopSec = (60 / state.tempo) * RHYTHM_CONFIG.beatsPerMeasure;
